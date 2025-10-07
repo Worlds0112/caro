@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Caro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="game-container">
+    <header class="header">
+      <div class="player">
+        <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" alt="Player 1">
+        <div class="info">
+          <span class="name">Worlds</span>
+          <span class="time">04:57</span>
+        </div>
+      </div>
+      <div class="vs">⚔️</div>
+      <div class="player">
+        <img src="https://cdn-icons-png.flaticon.com/512/4712/4712100.png" alt="Player 2">
+        <div class="info">
+          <span class="name">Paper Man</span>
+          <span class="time">05:00</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="board">
+      <!-- Tạo 15x15 ô caro -->
+      <div class="grid">
+        <!-- Sẽ tạo 225 ô bằng JS hoặc thủ công -->
+        <!-- Mỗi ô là một div có class="cell" -->
+        <script>
+          for (let i = 0; i < 15 * 15; i++) {
+            document.write('<div class="cell"></div>');
+          }
+        </script>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <button class="cancel-btn">Hủy bỏ ván chơi</button>
+    </footer>
+  </div>
+</body>
+</html>

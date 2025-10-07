@@ -1,0 +1,125 @@
+/* Home page: card-based mode selector */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+:root {
+  --muted: #9aa6b2;
+}
+body {
+  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+  background: linear-gradient(180deg, #071827, #03121a);
+  color: #e6eef4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+.home-root {
+  width: min(760px, 95vw);
+  padding: 16px;
+}
+.home-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.home-header h1 {
+  font-size: 18px;
+  color: #dbeef8;
+  margin: 0;
+  padding: 6px 0;
+}
+.home-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mode-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #13303b, #0f2731);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+.mode-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mode-icon {
+  font-size: 18px;
+  opacity: 0.95;
+}
+.mode-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e6f3f8;
+}
+.mode-settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 18px;
+}
+.settings-panel {
+  display: none;
+  min-width: 260px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+  border-radius: 8px;
+  margin-left: 8px;
+}
+.settings-panel label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.settings-panel select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e6eef4;
+  margin-top: 6px;
+}
+.size-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.start-now {
+  background: #1f8f7a;
+  color: #fff;
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.home-footer {
+  margin-top: 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 520px) {
+  .settings-panel {
+    min-width: 200px;
+  }
+}

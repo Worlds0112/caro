@@ -1,161 +1,94 @@
 <!-- ==================== FILE: trang-chu.html ==================== -->
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Game Cờ Caro - Trang Chủ</title>
-    <style>
-        /* ==================== CSS: trang-chu.css ==================== */
-        /* Reset CSS - Xóa margin, padding mặc định của trình duyệt */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box; /* Tính toán kích thước bao gồm border và padding */
-        }
-
-        /* Thiết kế nền trang với gradient màu đẹp */
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient từ xanh dương đến tím */
-            min-height: 100vh; /* Chiều cao tối thiểu bằng chiều cao màn hình */
-            display: flex; /* Sử dụng flexbox để căn giữa */
-            align-items: center; /* Căn giữa theo chiều dọc */
-            justify-content: center; /* Căn giữa theo chiều ngang */
-        }
-
-        /* Container chính chứa form */
-        .container {
-            background: rgba(255, 255, 255, 0.95); /* Nền trắng trong suốt 95% */
-            padding: 40px; /* Khoảng cách bên trong */
-            border-radius: 15px; /* Bo góc */
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1); /* Đổ bóng */
-            text-align: center; /* Căn giữa text */
-            min-width: 400px; /* Chiều rộng tối thiểu */
-        }
-
-        /* Tiêu đề chính */
-        h1 {
-            color: #333; /* Màu xám đậm */
-            margin-bottom: 30px; /* Khoảng cách phía dưới */
-            font-size: 2.5em; /* Kích thước chữ lớn */
-            font-weight: bold; /* Chữ đậm */
-        }
-
-        /* Container chứa các form control */
-        .form-container {
-            display: flex;
-            flex-direction: column; /* Sắp xếp theo chiều dọc */
-            gap: 20px; /* Khoảng cách giữa các phần tử */
-        }
-
-        /* Mỗi nhóm form (label + select) */
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            text-align: left; /* Căn trái cho label */
-        }
-
-        /* Styling cho label */
-        label {
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #555; /* Màu xám */
-            font-size: 1.1em;
-        }
-
-        /* Styling cho dropdown select */
-        select {
-            padding: 12px; /* Khoảng cách bên trong */
-            border: 2px solid #ddd; /* Viền xám nhạt */
-            border-radius: 8px; /* Bo góc */
-            font-size: 16px;
-            background: white;
-            cursor: pointer; /* Con trỏ chuột dạng tay khi hover */
-            transition: border-color 0.3s; /* Hiệu ứng chuyển màu viền */
-        }
-
-        /* Hiệu ứng khi focus vào select */
-        select:focus {
-            outline: none; /* Bỏ outline mặc định */
-            border-color: #667eea; /* Đổi màu viền khi focus */
-        }
-
-        /* Styling cho button */
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient giống nền */
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s; /* Hiệu ứng chuyển động */
-            margin-top: 10px;
-        }
-
-        /* Hiệu ứng hover cho button */
-        button:hover {
-            transform: translateY(-2px); /* Nâng lên 2px */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Tăng đổ bóng */
-        }
-
-        /* Hiệu ứng khi click button */
-        button:active {
-            transform: translateY(0); /* Trở về vị trí ban đầu */
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
+    <link rel="stylesheet" href="home-style.css" />
+  </head>
+  <body>
+    <div class="home-root">
+      <header class="home-header">
         <h1>Game Cờ Caro</h1>
-        <div class="form-container">
-            <!-- Chọn loại game -->
-            <div class="form-group">
-                <label for="type">Loại Game:</label>
-                <select id="type">
-                    <option value="2-players">2 Người Chơi</option>
-                    <option value="player-computer">Người vs Máy</option>
-                    <option value="computer-computer">Máy vs Máy</option>
-                </select>
+      </header>
+
+      <main class="home-main">
+        <section class="mode-card" data-mode="2-players">
+          <div class="mode-left">
+            <div class="mode-icon">👥</div>
+            <div class="mode-title">Chơi với một người bạn</div>
+          </div>
+          <div class="mode-settings">
+            <button class="settings-toggle" data-target="settings-2p">
+              ⚙️
+            </button>
+            <div class="settings-panel" id="settings-2p">
+              <label>Thời gian mỗi lượt:</label>
+              <select class="opt-time">
+                <option value="60">1 phút</option>
+                <option value="120">2 phút</option>
+                <option value="300">5 phút</option>
+                <option value="0">Không giới hạn</option>
+              </select>
+
+              <label>Ô để thắng:</label>
+              <select class="opt-winlen">
+                <option value="3">3 ô</option>
+                <option value="4">4 ô</option>
+                <option value="5" selected>5 ô</option>
+              </select>
+
+              <!-- kích thước bàn đã bị loại bỏ; mặc định sẽ dùng 15x15 hoặc 3x3 cho chế độ 3 ô -->
+              <div class="panel-actions">
+                <button class="start-now" data-mode="2-players">Chơi</button>
+              </div>
             </div>
-            
-            <!-- Chọn số hàng -->
-            <div class="form-group">
-                <label for="rows">Số Hàng:</label>
-                <select id="rows">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="40">40</option>
-                    <option value="50">50</option>
-                    <option value="60">60</option>
-                </select>
+          </div>
+        </section>
+
+        <section class="mode-card" data-mode="player-computer">
+          <div class="mode-left">
+            <div class="mode-icon">🤖</div>
+            <div class="mode-title">Chơi với robot</div>
+          </div>
+          <div class="mode-settings">
+            <button class="settings-toggle" data-target="settings-ai">
+              ⚙️
+            </button>
+            <div class="settings-panel" id="settings-ai">
+              <label>Thời gian mỗi lượt:</label>
+              <select class="opt-time">
+                <option value="60">1 phút</option>
+                <option value="120">2 phút</option>
+                <option value="300">5 phút</option>
+                <option value="0">Không giới hạn</option>
+              </select>
+
+              <label>Ô để thắng:</label>
+              <select class="opt-winlen">
+                <option value="3">3 ô</option>
+                <option value="4">4 ô</option>
+                <option value="5" selected>5 ô</option>
+              </select>
+
+              <!-- kích thước bàn đã bị loại bỏ; mặc định sẽ dùng 15x15 hoặc 3x3 cho chế độ 3 ô -->
+              <div class="panel-actions">
+                <button class="start-now" data-mode="player-computer">
+                  Chơi
+                </button>
+              </div>
             </div>
-            
-            <!-- Chọn số cột -->
-            <div class="form-group">
-                <label for="columns">Số Cột:</label>
-                <select id="columns">
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="30">30</option>
-                    <option value="40">40</option>
-                    <option value="50">50</option>
-                    <option value="60">60</option>
-                </select>
-            </div>
-            
-            <!-- Button bắt đầu game -->
-            <button id="start-game" onclick="batDauGame()">Bắt Đầu Chơi!</button>
-        </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="home-footer">
+        <small>Thiết lập trước khi chơi — chọn cài đặt rồi bấm Chơi</small>
+      </footer>
     </div>
-    
-    <script src="hom-script.js">
-       
-    </script>
-</body>
+
+    <link rel="stylesheet" href="home-style.css" />
+    <script src="home-script.js"></script>
+  </body>
 </html>
-
-

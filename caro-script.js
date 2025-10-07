@@ -45,6 +45,15 @@ let soCot = 0; // Số cột của bàn cờ
 let loaiGame = ""; // Loại game đang chơi
 let nguoiChoi = X; // Người chơi hiện tại (X hoặc O)
 let dangTamDung = false; // Trạng thái tạm dừng
+// Score tracking for multiple rounds
+let playerScores = { left: 0, right: 0 };
+// Per-turn timer state
+let turnTimerId = null;
+let turnTimeSeconds = 30; // default per-turn time shown (0 = unlimited)
+// Per-player remaining time (chess-clock style)
+let playerRemaining = [0, 0];
+// win length (number of in-a-row to win). default 5
+let winLength = 5;
 
 /**
  * Hàm khởi tạo game - được gọi khi trang load hoặc bắt đầu game mới
@@ -57,31 +66,51 @@ function khoiTaoGame() {
   const cotParam = thamSoURL.get("columns");
 
   // Kiểm tra xem có đủ tham số không
-  if (!loai || !hangParam || !cotParam) {
-    // Nếu thiếu tham số, quay về trang chủ
-    window.location.href = "trang-chu.html";
-    return;
-  }
-
-  // Danh sách các giá trị hợp lệ
+  // We'll accept flexible params. time and win may be provided too.
   const loaiHopLe = [HAI_NGUOI, NGUOI_MAY, MAY_MAY];
-  const kichThuocHopLe = [10, 20, 30, 40, 50, 60];
-
-  // Kiểm tra tính hợp lệ
-  if (
-    !loaiHopLe.includes(loai) ||
-    !kichThuocHopLe.includes(parseInt(hangParam)) ||
-    !kichThuocHopLe.includes(parseInt(cotParam))
-  ) {
-    // Nếu không hợp lệ, quay về trang chủ
-    window.location.href = "trang-chu.html";
+  if (!loaiHopLe.includes(loai)) {
+    window.location.href = "Home.html";
     return;
   }
 
-  // Gán giá trị cho các biến toàn cục
+  // parse optional params
+  const rowsParamVal = hangParam ? parseInt(hangParam, 10) : NaN;
+  const colsParamVal = cotParam ? parseInt(cotParam, 10) : NaN;
+  const timeParam = thamSoURL.get("time");
+  const winParam = thamSoURL.get("win");
+
+  // set winLength if provided and valid (3,4,5)
+  const w = parseInt(winParam, 10);
+  if (!isNaN(w) && [3, 4, 5].includes(w)) winLength = w;
+
+  // default sizes: if winLength==3 -> 3x3, else 15x15
+  const defaultSize = winLength === 3 ? 3 : 15;
+
+  // rows/cols: accept integers between 3 and 60; if provided override defaults, except when winLength==3 we force 3
+  if (winLength === 3) {
+    soHang = 3;
+    soCot = 3;
+  } else {
+    soHang =
+      !isNaN(rowsParamVal) && rowsParamVal >= 3 && rowsParamVal <= 60
+        ? rowsParamVal
+        : defaultSize;
+    soCot =
+      !isNaN(colsParamVal) && colsParamVal >= 3 && colsParamVal <= 60
+        ? colsParamVal
+        : defaultSize;
+  }
+
+  // time param: seconds (0 = unlimited)
+  if (timeParam !== null) {
+    const t = parseInt(timeParam, 10);
+    if (!isNaN(t) && t >= 0) {
+      turnTimeSeconds = t;
+    }
+  }
+
+  // set game type
   loaiGame = loai;
-  soHang = parseInt(hangParam);
-  soCot = parseInt(cotParam);
   nguoiChoi = X; // Luôn bắt đầu bằng X
   dangTamDung = false; // Không tạm dừng
 
@@ -96,6 +125,36 @@ function khoiTaoGame() {
 
   // Vẽ bảng game lên màn hình
   veBang();
+
+  // Reset and start per-turn timer for player 0
+  updateScoresUI();
+
+  // Initialize per-player remaining clocks (chess-clock style)
+  if (turnTimeSeconds === 0) {
+    // unlimited
+    playerRemaining = [Infinity, Infinity];
+  } else {
+    playerRemaining = [turnTimeSeconds, turnTimeSeconds];
+  }
+
+  // Update UI clocks
+  const time0 = document.getElementById("time-left-0");
+  const time1 = document.getElementById("time-left-1");
+  if (time0)
+    time0.textContent =
+      turnTimeSeconds === 0 ? "∞" : formatTime(playerRemaining[0]);
+  if (time1)
+    time1.textContent =
+      turnTimeSeconds === 0 ? "∞" : formatTime(playerRemaining[1]);
+
+  // Start the active player's clock (X starts)
+  startTurnTimer(0);
+
+  // Hiển thị thông báo bắt đầu trò chơi trên màn hình
+  showMessageOverlay("info", "TRÒ CHƠI BẮT ĐẦU!", {
+    autoHide: true,
+    timeout: 1500,
+  });
 
   // Nếu là chế độ máy vs máy, tự động bắt đầu
   if (loaiGame === MAY_MAY) {
@@ -112,6 +171,48 @@ function veBang() {
   const bang = document.getElementById("table_game");
   bang.innerHTML = ""; // Xóa nội dung cũ
 
+  // adjust cell size and wrap behavior for 3x3 mode
+  try {
+    const wrap = document.querySelector(".table-wrap");
+    if (wrap) {
+      if (winLength === 3) {
+        // compute large cell so 3x3 fills most of wrap
+        const availW = wrap.clientWidth - 24; // account for padding
+        const availH = wrap.clientHeight - 24;
+        const cell = Math.max(60, Math.floor(Math.min(availW / 3, availH / 3)));
+        document.documentElement.style.setProperty("--cell-size", cell + "px");
+        wrap.style.overflow = "hidden";
+        wrap.style.display = "flex";
+        wrap.style.alignItems = "center";
+        wrap.style.justifyContent = "center";
+        // add class to board-card for tighter padding and larger appearance
+        const card = document.querySelector(".board-card");
+        if (card) card.classList.add("large-3x3");
+      } else {
+        // reset to default behaviors
+        document.documentElement.style.setProperty("--cell-size", "34px");
+        wrap.style.overflow = "auto";
+        wrap.style.display = "";
+        wrap.style.alignItems = "";
+        wrap.style.justifyContent = "";
+        const card = document.querySelector(".board-card");
+        if (card) card.classList.remove("large-3x3");
+      }
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+
+  // create colgroup so columns size correctly
+  if (soCot > 0) {
+    const colgroup = document.createElement("colgroup");
+    for (let c = 0; c < soCot; c++) {
+      const col = document.createElement("col");
+      colgroup.appendChild(col);
+    }
+    bang.appendChild(colgroup);
+  }
+
   // Tạo từng hàng
   for (let i = 0; i < soHang; i++) {
     const hang = bang.insertRow(); // Thêm hàng mới
@@ -125,6 +226,184 @@ function veBang() {
       // ID có dạng "i-j" để biết vị trí ô
       o.innerHTML = `<div id="${i}-${j}" class="fixed" onclick="xuLyClick(this.id)"></div>`;
     }
+  }
+}
+
+function updateScoresUI() {
+  const left = document.getElementById("score-left");
+  const right = document.getElementById("score-right");
+  if (left) left.textContent = playerScores.left;
+  if (right) right.textContent = playerScores.right;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60)
+    .toString()
+    .padStart(2, "0");
+  const sec = (s % 60).toString().padStart(2, "0");
+  return `${m}:${sec}`;
+}
+
+function startTurnTimer(playerIndex) {
+  // Stop any existing timer
+  stopTurnTimer();
+
+  const el = document.getElementById(`time-left-${playerIndex}`);
+  // If unlimited, display infinity and do not start interval
+  if (!isFinite(playerRemaining[playerIndex])) {
+    if (el) el.textContent = "∞";
+    return;
+  }
+
+  // Ensure we have a number for remaining time
+  let remaining =
+    typeof playerRemaining[playerIndex] === "number"
+      ? Math.max(0, Math.floor(playerRemaining[playerIndex]))
+      : 0;
+  if (el) el.textContent = formatTime(remaining);
+
+  turnTimerId = setInterval(() => {
+    remaining -= 1;
+    playerRemaining[playerIndex] = remaining;
+    // update the UI for this player
+    const elNow = document.getElementById(`time-left-${playerIndex}`);
+    if (elNow) elNow.textContent = formatTime(Math.max(0, remaining));
+
+    if (remaining <= 0) {
+      stopTurnTimer();
+      // current player's time expired -> they lose
+      const loser = playerIndex === 0 ? X : O;
+      const winner = loser === X ? O : X;
+      setTimeout(() => {
+        showMessageOverlay("lose", "Hết giờ", { winner: winner });
+      }, 100);
+    }
+  }, 1000);
+}
+
+function stopTurnTimer() {
+  if (turnTimerId) {
+    clearInterval(turnTimerId);
+    turnTimerId = null;
+  }
+}
+
+// ================= Overlay messages =================
+function ensureOverlay() {
+  let overlay = document.getElementById("game-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "game-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.top = "0";
+    overlay.style.left = "0";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.pointerEvents = "none";
+    overlay.innerHTML =
+      '<div id="game-overlay-box" style="pointer-events:auto; min-width:280px; max-width:80%; padding:22px 26px; border-radius:10px; background:rgba(8,12,16,0.85); color:#fff; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,0.6); display:none;"></div>';
+    document.body.appendChild(overlay);
+  }
+  return overlay;
+}
+
+function showMessageOverlay(type, text, options = {}) {
+  const overlay = ensureOverlay();
+  const box = document.getElementById("game-overlay-box");
+  box.innerHTML = "";
+
+  // Stop any running turn timer when showing overlay
+  stopTurnTimer();
+
+  // Update scores if winner provided
+  if (options && options.winner) {
+    if (options.winner === X) playerScores.left++;
+    else if (options.winner === O) playerScores.right++;
+    updateScoresUI();
+  }
+
+  const title = document.createElement("div");
+  title.style.fontSize = "22px";
+  title.style.fontWeight = "800";
+  title.style.marginBottom = "12px";
+  title.textContent = text;
+  box.appendChild(title);
+
+  // If end of game, show buttons
+  if (type === "win" || type === "lose" || type === "draw") {
+    const sub = document.createElement("div");
+    sub.style.marginBottom = "16px";
+    sub.style.color = "#cbd5e1";
+    if (options && options.winner) {
+      sub.textContent =
+        options.winner === X
+          ? "Bạn đã thắng 🎉"
+          : options.winner === O
+          ? "Bạn đã thua 😢"
+          : "Kết thúc";
+    } else {
+      sub.textContent =
+        type === "draw"
+          ? "Hòa"
+          : type === "win"
+          ? "Bạn đã thắng 🎉"
+          : "Bạn đã thua 😢";
+    }
+    box.appendChild(sub);
+
+    const btnContinue = document.createElement("button");
+    btnContinue.textContent = "Tiếp tục trò chơi";
+    btnContinue.style.margin = "6px";
+    btnContinue.onclick = function () {
+      box.style.display = "none";
+      // start a fresh game with same params
+      khoiTaoGame();
+    };
+
+    const btnHome = document.createElement("button");
+    btnHome.textContent = "Quay về trang chủ";
+    btnHome.style.margin = "6px";
+    btnHome.onclick = function () {
+      window.location.href = "Home.html";
+    };
+
+    [btnContinue, btnHome].forEach((b) => {
+      b.style.padding = "8px 14px";
+      b.style.borderRadius = "6px";
+      b.style.border = "0";
+      b.style.cursor = "pointer";
+      b.style.background = "#1f2937";
+      b.style.color = "#fff";
+    });
+
+    box.appendChild(btnContinue);
+    box.appendChild(btnHome);
+  }
+
+  // General info
+  if (type === "info") {
+    // no extra buttons
+  }
+
+  box.style.display = "block";
+  overlay.style.display = "flex";
+  if (options && options.autoHide) {
+    setTimeout(() => {
+      box.style.display = "none";
+      overlay.style.display = "none";
+    }, options.timeout || 1200);
+  }
+}
+
+function hideOverlay() {
+  const overlay = document.getElementById("game-overlay");
+  if (overlay) {
+    const box = document.getElementById("game-overlay-box");
+    if (box) box.style.display = "none";
+    overlay.style.display = "none";
   }
 }
 
@@ -143,14 +422,12 @@ function xuLyClick(id) {
   if (ketQua === THANG) {
     // Có người thắng
     setTimeout(() => {
-      alert("Người chơi: " + nguoiChoi + " đã thắng!");
-      khoiTaoGame(); // Bắt đầu game mới
+      showMessageOverlay("win", "Kết thúc", { winner: nguoiChoi });
     }, 100);
   } else if (ketQua === HOA) {
     // Hòa
     setTimeout(() => {
-      alert("Hòa!");
-      khoiTaoGame(); // Bắt đầu game mới
+      showMessageOverlay("draw", "Kết thúc");
     }, 100);
   }
 }
@@ -185,6 +462,9 @@ function xuLyNuocDi(id) {
 
     // Đổi lượt chơi
     nguoiChoi = nguoiChoi === X ? O : X;
+    // Start timer for next player
+    const nextPlayerIndex = nguoiChoi === X ? 0 : 1;
+    startTurnTimer(nextPlayerIndex);
   } else if (loaiGame === NGUOI_MAY) {
     // Chế độ người vs máy
     if (nguoiChoi === X) {
@@ -209,21 +489,22 @@ function xuLyNuocDi(id) {
           // Kiểm tra máy thắng
           if (kiemTraThang([hMay, cMay])) {
             setTimeout(() => {
-              alert("Người chơi: " + O + " đã thắng!");
-              khoiTaoGame();
+              // If machine won, winner is O (machine)
+              showMessageOverlay("lose", "Kết thúc", { winner: O });
             }, 100);
             return;
           }
 
           if (kiemTraHoa()) {
             setTimeout(() => {
-              alert("Hòa!");
-              khoiTaoGame();
+              showMessageOverlay("draw", "Kết thúc");
             }, 100);
             return;
           }
 
           nguoiChoi = X; // Chuyển lượt lại cho người
+          // start timer for human player
+          startTurnTimer(0);
         }
       }, 200);
     }
@@ -396,8 +677,13 @@ function kiemTraThang(viTri) {
   const cheoChinh = demCheoChinh(x, y, nguoiHienTai);
   const cheoPhu = demCheoPhu(x, y, nguoiHienTai);
 
-  // Thắng nếu có ít nhất 5 quân liên tiếp ở bất kỳ hướng nào
-  return ngang >= 5 || doc >= 5 || cheoChinh >= 5 || cheoPhu >= 5;
+  // Thắng nếu có ít nhất winLength quân liên tiếp ở bất kỳ hướng nào
+  return (
+    ngang >= winLength ||
+    doc >= winLength ||
+    cheoChinh >= winLength ||
+    cheoPhu >= winLength
+  );
 }
 
 /**
@@ -499,8 +785,7 @@ async function mayVsMay(soNuocToiDa) {
     // Kiểm tra thắng
     if (kiemTraThang([h, c])) {
       setTimeout(() => {
-        alert("Người chơi: " + nguoiChoi + " đã thắng!");
-        khoiTaoGame();
+        showMessageOverlay("win", "Kết thúc", { winner: nguoiChoi });
       }, 100);
       return THANG;
     }
@@ -508,14 +793,15 @@ async function mayVsMay(soNuocToiDa) {
     // Kiểm tra hòa
     if (kiemTraHoa()) {
       setTimeout(() => {
-        alert("Hòa!");
-        khoiTaoGame();
+        showMessageOverlay("draw", "Kết thúc");
       }, 100);
       return HOA;
     }
 
     // Đổi lượt: X -> O hoặc O -> X
     nguoiChoi = nguoiChoi === X ? O : X;
+    const nextIdx = nguoiChoi === X ? 0 : 1;
+    startTurnTimer(nextIdx);
     soNuocDaDanh++;
   }
 }
@@ -625,9 +911,12 @@ function taiGame() {
         }
       }
 
-      alert("Tải game thành công!");
+      showMessageOverlay("info", "Tải game thành công!", {
+        autoHide: true,
+        timeout: 1400,
+      });
     } catch (loi) {
-      alert("Lỗi khi tải file game!");
+      showMessageOverlay("info", "Lỗi khi tải file game!");
       console.error("Chi tiết lỗi:", loi);
     }
   };
@@ -655,3 +944,43 @@ function tamDung() {
 window.onload = function () {
   khoiTaoGame();
 };
+
+// Render user badge on game page if nameLeft param or saved user exists
+(function renderGameUserBadge() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    let name = params.get("nameLeft") || null;
+    if (!name) {
+      const cur = JSON.parse(
+        localStorage.getItem("caro.currentUser") || "null"
+      );
+      if (cur && cur.name) name = cur.name;
+    }
+    if (!name) return;
+    // create badge
+    const badge = document.createElement("div");
+    badge.className = "user-badge";
+    badge.style.position = "fixed";
+    badge.style.left = "12px";
+    badge.style.top = "12px";
+    badge.style.background = "rgba(255,255,255,0.03)";
+    badge.style.padding = "8px 10px";
+    badge.style.borderRadius = "8px";
+    badge.style.zIndex = "1000";
+    badge.style.cursor = "pointer";
+    badge.innerHTML = `<div class="ub-name">${name}</div><button class="ub-logout" title="Đăng xuất" style="background:transparent;border:0;margin-left:10px;color:#9aa6b2;">⎋</button>`;
+    document.body.appendChild(badge);
+    badge.querySelector(".ub-logout").addEventListener("click", (e) => {
+      e.stopPropagation();
+      localStorage.removeItem("caro.currentUser");
+      // clear saved settings if desired
+      location.href = "Home.html";
+    });
+    badge.addEventListener("click", () => {
+      if (confirm("Đăng xuất người dùng?")) {
+        localStorage.removeItem("caro.currentUser");
+        location.href = "Home.html";
+      }
+    });
+  } catch (e) {}
+})();
