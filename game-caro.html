@@ -1,0 +1,145 @@
+
+<!-- ==================== FILE: game-caro.html ==================== -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Cờ Caro</title>
+    <style>
+        /* ==================== CSS: game-caro.css ==================== */
+        
+        /* Reset CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Nền tối cho trang game */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #1a1a1a; /* Nền đen */
+            color: white; /* Chữ trắng */
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Container chính của game */
+        .game-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Tiêu đề game */
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            color: #fff;
+        }
+
+        /* Thanh điều khiển chứa các nút */
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px; /* Khoảng cách giữa các nút */
+            justify-content: center; /* Căn giữa */
+            flex-wrap: wrap; /* Xuống hàng nếu không đủ chỗ */
+        }
+
+        /* Styling cho các nút điều khiển */
+        .controls button {
+            background: #4CAF50; /* Màu xanh lá */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s; /* Hiệu ứng chuyển màu */
+        }
+
+        /* Hiệu ứng hover cho nút */
+        .controls button:hover {
+            background: #45a049; /* Màu xanh đậm hơn khi hover */
+        }
+
+        /* Container chứa bảng game */
+        .game-board {
+            display: flex;
+            justify-content: center;
+            overflow: auto; /* Cuộn nếu bảng quá lớn */
+            max-height: 80vh; /* Chiều cao tối đa 80% màn hình */
+        }
+
+        /* Bảng game chính */
+        #table_game {
+            border-collapse: collapse; /* Gộp viền các ô */
+            background: #333; /* Nền xám đậm */
+            border: 2px solid #555; /* Viền xám */
+        }
+
+        /* Mỗi ô trong bảng */
+        .td_game {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #555; /* Viền cho từng ô */
+            padding: 0;
+        }
+
+        /* Div bên trong mỗi ô (có thể click) */
+        .fixed {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center; /* Căn giữa theo chiều dọc */
+            justify-content: center; /* Căn giữa theo chiều ngang */
+            cursor: pointer; /* Con trỏ dạng tay */
+            background: #444; /* Nền xám */
+            transition: background 0.2s; /* Hiệu ứng chuyển màu */
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Hiệu ứng hover cho ô */
+        .fixed:hover {
+            background: #555; /* Sáng hơn khi hover */
+        }
+
+        /* Màu cho quân X */
+        .x {
+            color: #ff4444; /* Màu đỏ */
+        }
+
+        /* Màu cho quân O */
+        .o {
+            color: #4444ff; /* Màu xanh dương */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Game Cờ Caro</h1>
+        
+        <!-- Thanh điều khiển -->
+        <div class="controls">
+            <button onclick="khoiTaoGame()">Game Mới</button>
+            <button onclick="luuGame()">Lưu Game</button>
+            <!-- Input file ẩn để chọn file -->
+            <input type="file" id="loadFile" accept=".xml" onchange="taiGame()" style="display: none;">
+            <button onclick="document.getElementById('loadFile').click()">Tải Game</button>
+            <button id="pauseBtn" onclick="tamDung()">Tạm Dừng</button>
+            <button onclick="location.reload()">Khởi Động Lại</button>
+        </div>
+        
+        <!-- Bảng game -->
+        <div class="game-board">
+            <table id="table_game"></table>
+        </div>
+    </div>
+    
+   <script src="caro-script.js"></script>
+</body>
+</html>
